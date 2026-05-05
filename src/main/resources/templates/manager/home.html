@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Trang Chủ Nhân Viên - Phòng Khám Đức Thịnh</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" th:href="@{/manager/home}">
+            <i class="bi bi-hospital-fill me-2"></i>Phòng Khám Đức Thịnh
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMain">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" th:href="@{/manager/home}">
+                        <i class="bi bi-house-fill me-1"></i>Trang chủ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/manager/services}">
+                        <i class="bi bi-grid-fill me-1"></i>Quản lý dịch vụ
+                    </a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-white">
+                    <i class="bi bi-person-badge me-1"></i>
+                    <span th:text="${loggedUser?.fullName}"></span>
+                </span>
+                <a class="btn btn-outline-light btn-sm" th:href="@{/logout}">
+                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid py-4 px-4">
+
+    <!-- Welcome Banner -->
+    <div class="card border-0 shadow-sm mb-4"
+         style="background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);">
+        <div class="card-body text-white py-4 px-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 class="fw-bold mb-1">
+                        <i class="bi bi-hand-wave me-2"></i>
+                        Xin chào, <span th:text="${loggedUser?.fullName}"></span>!
+                    </h4>
+                    <p class="mb-0 opacity-75">Hệ thống quản lý Phòng Khám Tư Nhân Đức Thịnh</p>
+                </div>
+                <div class="col-md-4 text-end d-none d-md-block">
+                    <i class="bi bi-building-fill-gear" style="font-size:5rem; opacity:0.25;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                         style="width:56px;height:56px;flex-shrink:0">
+                        <i class="bi bi-clipboard2-pulse text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold fs-4 mb-0" th:text="${totalServices}">0</div>
+                        <small class="text-muted">Tổng dịch vụ</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center"
+                         style="width:56px;height:56px;flex-shrink:0">
+                        <i class="bi bi-stethoscope text-info fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold fs-4 mb-0" th:text="${totalGeneral}">0</div>
+                        <small class="text-muted">Dịch vụ khám</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center"
+                         style="width:56px;height:56px;flex-shrink:0">
+                        <i class="bi bi-eyedropper text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold fs-4 mb-0" th:text="${totalTest}">0</div>
+                        <small class="text-muted">Xét nghiệm</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h6 class="fw-bold text-muted text-uppercase mb-3">
+                <i class="bi bi-lightning-fill me-1"></i>Thao tác nhanh
+            </h6>
+        </div>
+        <div class="col-md-3">
+            <a th:href="@{/manager/services}" class="card border-0 shadow-sm text-decoration-none h-100 quick-action-card">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-grid-3x3-gap-fill text-primary fs-1 mb-3 d-block"></i>
+                    <div class="fw-semibold">Quản lý dịch vụ</div>
+                    <small class="text-muted">Xem danh sách, tìm kiếm, lọc</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a th:href="@{/manager/services/new}" class="card border-0 shadow-sm text-decoration-none h-100 quick-action-card">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-plus-circle-fill text-success fs-1 mb-3 d-block"></i>
+                    <div class="fw-semibold">Thêm dịch vụ mới</div>
+                    <small class="text-muted">Tạo dịch vụ khám hoặc xét nghiệm</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a th:href="@{/manager/services(type=GENERAL)}" class="card border-0 shadow-sm text-decoration-none h-100 quick-action-card">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-stethoscope text-info fs-1 mb-3 d-block"></i>
+                    <div class="fw-semibold">Dịch vụ khám</div>
+                    <small class="text-muted">Xem tất cả dịch vụ khám thông thường</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a th:href="@{/manager/services(type=TEST)}" class="card border-0 shadow-sm text-decoration-none h-100 quick-action-card">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-eyedropper text-warning fs-1 mb-3 d-block"></i>
+                    <div class="fw-semibold">Xét nghiệm</div>
+                    <small class="text-muted">Xem tất cả dịch vụ xét nghiệm</small>
+                </div>
+            </a>
+        </div>
+    </div>
+
+
+</div>
+
+<footer class="bg-dark text-white text-center py-2 mt-4">
+    <small>© 2026 Phòng Khám Tư Nhân Đức Thịnh</small>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+    .quick-action-card { transition: transform .15s, box-shadow .15s; color: inherit; }
+    .quick-action-card:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.12) !important; }
+</style>
+</body>
+</html>

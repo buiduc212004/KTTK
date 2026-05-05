@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${isEdit} ? 'Sửa Dịch Vụ' : 'Thêm Dịch Vụ Mới'">Form Dịch Vụ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" th:href="@{/manager/home}">
+            <i class="bi bi-hospital-fill me-2"></i>Phòng Khám Đức Thịnh
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-white small" th:text="${loggedUser?.fullName}"></span>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/logout}">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/manager/home}">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/manager/services}">Quản lý dịch vụ</a></li>
+            <li class="breadcrumb-item active" th:text="${isEdit} ? 'Sửa dịch vụ' : 'Thêm mới'"></li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-plus-circle me-2"
+                           th:classappend="${isEdit} ? ' d-none' : ''"></i>
+                        <i class="bi bi-pencil-fill me-2"
+                           th:classappend="${!isEdit} ? ' d-none' : ''"></i>
+                        <span th:text="${isEdit} ? 'Cập Nhật Dịch Vụ' : 'Thêm Dịch Vụ / Xét Nghiệm Mới'"></span>
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Loại dịch vụ selector (chỉ hiện khi thêm mới) -->
+                    <div th:if="${!isEdit}" class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-list-check me-1"></i>Loại dịch vụ <span class="text-danger">*</span>
+                        </label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="serviceKindSelector"
+                                       id="kindGeneral" value="GENERAL" checked
+                                       onchange="switchForm('GENERAL')"/>
+                                <label class="form-check-label" for="kindGeneral">
+                                    <i class="bi bi-stethoscope me-1 text-info"></i>Khám thông thường
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="serviceKindSelector"
+                                       id="kindTest" value="TEST"
+                                       onchange="switchForm('TEST')"/>
+                                <label class="form-check-label" for="kindTest">
+                                    <i class="bi bi-eyedropper me-1 text-warning"></i>Xét nghiệm
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Badge khi edit -->
+                    <div th:if="${isEdit}" class="mb-3">
+                        <span th:if="${serviceKind == 'GENERAL'}" class="badge bg-info text-dark fs-6">
+                            <i class="bi bi-stethoscope me-1"></i>Dịch vụ Khám thông thường
+                        </span>
+                        <span th:if="${serviceKind == 'TEST'}" class="badge bg-warning text-dark fs-6">
+                            <i class="bi bi-eyedropper me-1"></i>Dịch vụ Xét nghiệm
+                        </span>
+                    </div>
+
+                    <!-- ===== FORM GENERAL SERVICE ===== -->
+                    <!-- Khi sửa: chỉ render đúng một form (tránh form ẩn vẫn có required / trùng trường). -->
+                    <form id="formGeneral"
+                          th:if="${!isEdit or serviceKind == 'GENERAL'}"
+                          th:action="${isEdit} ? @{/manager/services/update/{id}(id=${editId})} : @{/manager/services/add}"
+                          method="post">
+
+                        <input type="hidden" name="serviceKind" value="GENERAL"/>
+                        <input type="hidden" name="type" value="GENERAL"/>
+
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">
+                                    Tên dịch vụ <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="name" class="form-control" required
+                                       placeholder="Nhập tên dịch vụ..."
+                                       th:value="${(isEdit and serviceKind == 'GENERAL') ? generalService.name : ''}"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">
+                                    Giá (₫) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" name="price" class="form-control" required min="0" step="1000"
+                                       placeholder="0"
+                                       th:value="${(isEdit and serviceKind == 'GENERAL') ? generalService.price : ''}"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phân loại</label>
+                                <div class="form-control bg-light border py-2 px-3 rounded">
+                                    <span class="text-body">Khám thông thường</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phòng khám</label>
+                                <select name="clinicId" class="form-select">
+                                    <option value="">-- Chọn phòng khám --</option>
+                                    <option th:each="c : ${clinics}"
+                                            th:value="${c.id}"
+                                            th:text="${c.name}"
+                                            th:selected="${isEdit and serviceKind == 'GENERAL' and generalService.clinic != null and generalService.clinic.id == c.id}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Mô tả</label>
+                                <textarea name="des" class="form-control" rows="3"
+                                          placeholder="Mô tả chi tiết về dịch vụ..."
+                                          th:text="${(isEdit and serviceKind == 'GENERAL') ? generalService.des : ''}"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="isActive"
+                                           id="isActiveChkGeneral"
+                                           th:checked="${(isEdit and serviceKind == 'GENERAL') ? generalService.active : true}"/>
+                                    <label class="form-check-label" for="isActiveChkGeneral">
+                                        <strong>Đang hoạt động</strong>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i>
+                                <span th:text="${isEdit} ? 'Cập nhật' : 'Thêm mới'"></span>
+                            </button>
+                            <a th:href="@{/manager/services}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-x-circle me-1"></i>Hủy
+                            </a>
+                        </div>
+                    </form>
+
+                    <!-- ===== FORM TEST SERVICE ===== -->
+                    <form id="formTest"
+                          th:if="${!isEdit or serviceKind == 'TEST'}"
+                          th:action="${isEdit} ? @{/manager/services/update/{id}(id=${editId})} : @{/manager/services/add}"
+                          method="post"
+                          th:style="${isEdit} ? '' : 'display:none'">
+
+                        <input type="hidden" name="serviceKind" value="TEST"/>
+                        <input type="hidden" name="type" value="TEST"/>
+
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">
+                                    Tên xét nghiệm <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="name" class="form-control" required
+                                       placeholder="Nhập tên xét nghiệm..."
+                                       th:value="${(isEdit and serviceKind == 'TEST') ? testService.name : ''}"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">
+                                    Giá (₫) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" name="price" class="form-control" required min="0" step="1000"
+                                       placeholder="0"
+                                       th:value="${(isEdit and serviceKind == 'TEST') ? testService.price : ''}"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phân loại</label>
+                                <div class="form-control bg-light border py-2 px-3 rounded">
+                                    <span class="text-body">Xét nghiệm</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phòng khám</label>
+                                <select name="clinicId" class="form-select">
+                                    <option value="">-- Chọn phòng khám --</option>
+                                    <option th:each="c : ${clinics}"
+                                            th:value="${c.id}"
+                                            th:text="${c.name}"
+                                            th:selected="${isEdit and serviceKind == 'TEST' and testService.clinic != null and testService.clinic.id == c.id}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Mô tả</label>
+                                <textarea name="des" class="form-control" rows="2"
+                                          placeholder="Mô tả về xét nghiệm..."
+                                          th:text="${(isEdit and serviceKind == 'TEST') ? testService.des : ''}"></textarea>
+                            </div>
+
+                            <!-- Thông tin đặc thù xét nghiệm -->
+                            <div class="col-12">
+                                <div class="card border-warning bg-warning bg-opacity-10">
+                                    <div class="card-header bg-warning bg-opacity-25 py-2">
+                                        <small class="fw-bold text-warning-emphasis">
+                                            <i class="bi bi-clipboard2-check me-1"></i>Thông tin xét nghiệm
+                                        </small>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-list-task me-1"></i>Hướng dẫn chuẩn bị
+                                            </label>
+                                            <textarea name="preparationInstructions"
+                                                      class="form-control" rows="3"
+                                                      placeholder="VD: Nhịn ăn 8 tiếng, uống nhiều nước lọc..."
+                                                      th:text="${(isEdit and serviceKind == 'TEST') ? testService.preparationInstructions : ''}"></textarea>
+                                        </div>
+                                        <div>
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-gear me-1"></i>Phương pháp thực hiện
+                                            </label>
+                                            <input type="text" name="method" class="form-control"
+                                                   placeholder="VD: Lấy máu tĩnh mạch, phân tích bằng máy tự động..."
+                                                   th:value="${(isEdit and serviceKind == 'TEST') ? testService.method : ''}"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i>
+                                <span th:text="${isEdit} ? 'Cập nhật' : 'Thêm mới'"></span>
+                            </button>
+                            <a th:href="@{/manager/services}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-x-circle me-1"></i>Hủy
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white text-center py-2 mt-4">
+    <small>© 2026 Phòng Khám Tư Nhân Đức Thịnh</small>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function switchForm(kind) {
+        document.getElementById('formGeneral').style.display = (kind === 'GENERAL') ? '' : 'none';
+        document.getElementById('formTest').style.display    = (kind === 'TEST')    ? '' : 'none';
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        const isEdit = /*[[${isEdit}]]*/ false;
+        if (!isEdit) {
+            switchForm('GENERAL');
+        }
+    });
+</script>
+</body>
+</html>

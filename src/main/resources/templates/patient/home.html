@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Trang Chủ Bệnh Nhân - Phòng Khám Đức Thịnh</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+    <style>
+        .booking-row { cursor: pointer; }
+        .booking-row:hover { background-color: #f0fdf4; }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/patient/home}">
+            <i class="bi bi-hospital-fill me-2"></i>Phòng Khám Đức Thịnh
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-white">
+                <i class="bi bi-person-circle me-1"></i>
+                <span th:text="${loggedUser?.fullName}"></span>
+            </span>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/logout}">
+                <i class="bi bi-box-arrow-right"></i> Đăng xuất
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+
+    <!-- Flash Messages -->
+    <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Welcome Banner -->
+    <div class="card border-0 shadow-sm mb-4"
+         style="background: linear-gradient(135deg, #198754 0%, #20c997 100%);">
+        <div class="card-body text-white py-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 class="fw-bold mb-1">
+                        <i class="bi bi-hand-wave me-2"></i>
+                        Xin chào, <span th:text="${loggedUser?.fullName}"></span>!
+                    </h4>
+                    <p class="mb-3 opacity-75">Chào mừng bạn đến với hệ thống đặt lịch khám trực tuyến</p>
+                    <a th:href="@{/patient/booking/services}" class="btn btn-light fw-semibold">
+                        <i class="bi bi-calendar-plus me-2"></i>Đặt Lịch Khám Ngay
+                    </a>
+                </div>
+                <div class="col-md-4 text-end d-none d-md-block">
+                    <i class="bi bi-calendar-heart" style="font-size:5rem; opacity:0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <i class="bi bi-calendar-check-fill text-success fs-2 mb-2 d-block"></i>
+                    <h5 class="fw-bold mb-0" th:text="${#lists.size(myBookings)}">0</h5>
+                    <small class="text-muted">Tổng lịch đã đặt</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <i class="bi bi-clock-history text-warning fs-2 mb-2 d-block"></i>
+                    <h5 class="fw-bold mb-0"
+                        th:text="${#lists.size(myBookings.?[scheduleCustomerBooking != null and scheduleCustomerBooking.isState == 'PENDING'])}">0</h5>
+                    <small class="text-muted">Chờ xác nhận</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <i class="bi bi-check2-circle text-primary fs-2 mb-2 d-block"></i>
+                    <h5 class="fw-bold mb-0"
+                        th:text="${#lists.size(myBookings.?[scheduleCustomerBooking != null and scheduleCustomerBooking.isState == 'CONFIRMED'])}">0</h5>
+                    <small class="text-muted">Đã xác nhận</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Bookings -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+            <span class="fw-bold">
+                <i class="bi bi-calendar2-week me-2 text-success"></i>Lịch Hẹn Của Tôi
+            </span>
+            <a th:href="@{/patient/booking/services}" class="btn btn-success btn-sm">
+                <i class="bi bi-plus me-1"></i>Đặt lịch mới
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Ngày đặt</th>
+                        <th>Dịch vụ</th>
+                        <th>Bác sĩ</th>
+                        <th>Ngày khám</th>
+                        <th>Giờ</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Chi tiết</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(myBookings)}">
+                        <td colspan="9" class="text-center py-4 text-muted">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            Bạn chưa có lịch hẹn nào.
+                            <a th:href="@{/patient/booking/services}">Đặt lịch ngay!</a>
+                        </td>
+                    </tr>
+
+                    <tr th:each="r, idx : ${myBookings}" class="booking-row"
+                        data-bs-toggle="modal"
+                        th:data-bs-target="'#detailModal' + ${r.id}">
+                        <td><small class="text-muted" th:text="${idx.count}"></small></td>
+                        <td><small th:text="${#temporals.format(r.bookingDate, 'dd/MM/yyyy')}"></small></td>
+                        <td>
+                            <div class="fw-semibold small" th:text="${r.service?.name}"></div>
+                            <span th:if="${r.service?.type == 'GENERAL'}" class="badge bg-info text-dark" style="font-size:10px">Khám</span>
+                            <span th:if="${r.service?.type == 'TEST'}" class="badge bg-warning text-dark" style="font-size:10px">Xét nghiệm</span>
+                        </td>
+                        <td><small th:text="${r.scheduleCustomerBooking?.doctor?.name}"></small></td>
+                        <td><small th:text="${#temporals.format(r.scheduleCustomerBooking?.dateSchedule, 'dd/MM/yyyy')}"></small></td>
+                        <td><small th:text="${r.scheduleCustomerBooking?.timeSchedule}"></small></td>
+                        <td>
+                            <span class="text-success fw-semibold small"
+                                  th:text="${#numbers.formatDecimal(r.total, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                        </td>
+                        <td>
+                            <span th:if="${r.scheduleCustomerBooking?.isState == 'PENDING'}"
+                                  class="badge bg-warning text-dark">
+                                <i class="bi bi-clock me-1"></i>Chờ xác nhận
+                            </span>
+                            <span th:if="${r.scheduleCustomerBooking?.isState == 'CONFIRMED'}"
+                                  class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Đã xác nhận
+                            </span>
+                            <span th:if="${r.scheduleCustomerBooking?.isState == 'CANCELLED'}"
+                                  class="badge bg-danger">
+                                <i class="bi bi-x-circle me-1"></i>Đã hủy
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="text-success"><i class="bi bi-eye-fill"></i></span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== DETAIL MODALS (1 per booking) ===================== -->
+<div th:each="r : ${myBookings}">
+    <div class="modal fade" th:id="'detailModal' + ${r.id}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clipboard2-check me-2"></i>
+                        Chi Tiết Phiếu Đặt Khám
+                        <span class="badge bg-white text-success ms-2" th:text="'#' + ${r.id}"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+
+                        <!-- Dịch vụ -->
+                        <div class="col-12">
+                            <div class="card border-success border-opacity-25 bg-light">
+                                <div class="card-body py-2 px-3">
+                                    <small class="text-uppercase text-muted fw-bold d-block mb-1">
+                                        <i class="bi bi-clipboard2-pulse me-1"></i>Dịch vụ
+                                    </small>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="fw-semibold" th:text="${r.service?.name}"></span>
+                                            <span th:if="${r.service?.type == 'GENERAL'}" class="badge bg-info text-dark ms-2">Khám thông thường</span>
+                                            <span th:if="${r.service?.type == 'TEST'}" class="badge bg-warning text-dark ms-2">Xét nghiệm</span>
+                                        </div>
+                                        <span class="text-success fw-bold"
+                                              th:text="${#numbers.formatDecimal(r.service?.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bác sĩ & Lịch hẹn -->
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body py-2 px-3">
+                                    <small class="text-uppercase text-muted fw-bold d-block mb-2">
+                                        <i class="bi bi-person-badge me-1"></i>Bác sĩ &amp; Lịch hẹn
+                                    </small>
+                                    <div class="row">
+                                        <div class="col-5 text-muted small">Bác sĩ:</div>
+                                        <div class="col-7 fw-semibold small" th:text="${r.scheduleCustomerBooking?.doctor?.name}"></div>
+                                        <div class="col-5 text-muted small mt-1">Chuyên khoa:</div>
+                                        <div class="col-7 small mt-1"
+                                             th:text="${r.scheduleCustomerBooking?.doctor?.specialization != null
+                                                        ? r.scheduleCustomerBooking.doctor.specialization.name
+                                                        : r.scheduleCustomerBooking?.doctor?.major}"></div>
+                                        <div class="col-5 text-muted small mt-1">Ngày khám:</div>
+                                        <div class="col-7 fw-semibold small mt-1"
+                                             th:text="${r.scheduleCustomerBooking?.dateSchedule != null
+                                                        ? #temporals.format(r.scheduleCustomerBooking.dateSchedule, 'EEE, dd/MM/yyyy')
+                                                        : '---'}"></div>
+                                        <div class="col-5 text-muted small mt-1">Giờ khám:</div>
+                                        <div class="col-7 fw-bold text-success small mt-1"
+                                             th:text="${r.scheduleCustomerBooking?.timeSchedule}"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin bệnh nhân -->
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body py-2 px-3">
+                                    <small class="text-uppercase text-muted fw-bold d-block mb-2">
+                                        <i class="bi bi-person me-1"></i>Bệnh nhân
+                                    </small>
+                                    <div class="row">
+                                        <div class="col-5 text-muted small">Họ tên:</div>
+                                        <div class="col-7 fw-semibold small" th:text="${r.patient?.name}"></div>
+                                        <div class="col-5 text-muted small mt-1">Giới tính:</div>
+                                        <div class="col-7 small mt-1" th:text="${r.patient?.gender}"></div>
+                                        <div class="col-5 text-muted small mt-1">Ngày sinh:</div>
+                                        <div class="col-7 small mt-1"
+                                             th:text="${r.patient?.dateOfBirth != null
+                                                        ? #temporals.format(r.patient.dateOfBirth,'dd/MM/yyyy')
+                                                        : '---'}"></div>
+                                        <div class="col-5 text-muted small mt-1">SĐT:</div>
+                                        <div class="col-7 small mt-1"
+                                             th:text="${#strings.isEmpty(r.patient?.telNumber) ? '---' : r.patient.telNumber}"></div>
+                                        <div class="col-5 text-muted small mt-1">Dị ứng:</div>
+                                        <div class="col-7 small mt-1"
+                                             th:text="${#strings.isEmpty(r.patient?.allergies) ? 'Không có' : r.patient.allergies}"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ghi chú & Tổng tiền -->
+                        <div class="col-12">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body py-2 px-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <small class="text-muted fw-bold text-uppercase">
+                                                <i class="bi bi-chat-left-text me-1"></i>Ghi chú
+                                            </small>
+                                            <p class="mb-0 small mt-1"
+                                               th:text="${#strings.isEmpty(r.note) ? '(Không có ghi chú)' : r.note}"></p>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <small class="text-muted d-block">Tổng tiền</small>
+                                            <span class="fw-bold fs-5 text-success"
+                                                  th:text="${#numbers.formatDecimal(r.total, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                                            <div th:if="${r.sellOff > 0}" class="text-muted small">
+                                                Giảm giá: <span th:text="${r.sellOff} + '%'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div class="col-12 text-center">
+                            <span th:if="${r.scheduleCustomerBooking?.isState == 'PENDING'}"
+                                  class="badge bg-warning text-dark px-4 py-2 fs-6">
+                                <i class="bi bi-clock me-1"></i>Đang chờ xác nhận từ phòng khám
+                            </span>
+                            <span th:if="${r.scheduleCustomerBooking?.isState == 'CONFIRMED'}"
+                                  class="badge bg-success px-4 py-2 fs-6">
+                                <i class="bi bi-check-circle me-1"></i>Phòng khám đã xác nhận lịch hẹn
+                            </span>
+                            <span th:if="${r.scheduleCustomerBooking?.isState == 'CANCELLED'}"
+                                  class="badge bg-danger px-4 py-2 fs-6">
+                                <i class="bi bi-x-circle me-1"></i>Lịch hẹn đã bị hủy
+                            </span>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto">
+                        <i class="bi bi-calendar-event me-1"></i>
+                        Ngày đặt: <span th:text="${#temporals.format(r.bookingDate, 'dd/MM/yyyy')}"></span>
+                    </small>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x me-1"></i>Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white text-center py-2 mt-4">
+    <small>© 2026 Phòng Khám Tư Nhân Đức Thịnh</small>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

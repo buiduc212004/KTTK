@@ -1,0 +1,116 @@
+/* ============================================================
+   Phòng Khám Tư Nhân - Custom Styles
+   ============================================================ */
+
+/* General */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-size: 1.1rem;
+    letter-spacing: 0.3px;
+}
+
+/* Cards */
+.card {
+    border-radius: 12px;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+}
+
+/* Service Cards (patient booking) */
+.service-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Slot buttons */
+.btn-outline-success:hover {
+    transform: scale(1.05);
+}
+
+/* Table */
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Step circles in progress indicator */
+.step-circle {
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Form */
+.form-label {
+    font-size: 0.875rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
+}
+
+/* Manager form focus */
+.bg-primary .form-control:focus, .bg-primary .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Alert */
+.alert {
+    border-radius: 10px;
+}
+
+/* Sidebar-like nav */
+.manager-nav .nav-link {
+    border-radius: 8px;
+    color: #495057;
+}
+
+.manager-nav .nav-link:hover,
+.manager-nav .nav-link.active {
+    background-color: #e9ecef;
+    color: #0d6efd;
+}
+
+/* Footer */
+footer {
+    font-size: 0.8rem;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+}
+
+/* Print styles for confirm form */
+@media print {
+    nav, footer, .btn, .alert { display: none !important; }
+    .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+}

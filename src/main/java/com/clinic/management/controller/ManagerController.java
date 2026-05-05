@@ -2,7 +2,11 @@ package com.clinic.management.controller;
 
 import com.clinic.management.dao.ClinicDAO;
 import com.clinic.management.dao.ServiceDAO;
-import com.clinic.management.model.*;
+import com.clinic.management.model.Clinic;
+import com.clinic.management.model.GeneralService;
+import com.clinic.management.model.Service;
+import com.clinic.management.model.TestService;
+import com.clinic.management.model.User;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,8 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Controller quản lý dịch vụ (vai trò tương đương {@code ServiceController} trong UML).
- * Dữ liệu dịch vụ được truy cập qua tầng {@link ServiceDAO}, không qua Repository.
+ * Controller quản lý dịch vụ — chỉ vai trò {@code MANAGER} (sau đăng nhập).
  */
 @Controller
 @RequestMapping("/manager")
@@ -31,32 +34,30 @@ public class ManagerController {
     private final ServiceDAO serviceDAO;
     private final ClinicDAO clinicDAO;
 
-    private User checkManagerAccess(HttpSession session) {
-        User loggedUser = (User) session.getAttribute("loggedUser");
-        if (loggedUser == null || !"MANAGER".equals(loggedUser.getRole())) {
-            return null;
+    /** @return {@code null} nếu OK; hoặc chuỗi redirect cho chặn MANAGER-only. */
+    private String guardManager(HttpSession session) {
+        User logged = (User) session.getAttribute("loggedUser");
+        if (logged == null) {
+            return "redirect:/login";
         }
-        return loggedUser;
+        if (!"MANAGER".equals(logged.getRole())) {
+            return "redirect:/account";
+        }
+        return null;
     }
-
-    // ======================== TRANG CHỦ NHÂN VIÊN ========================
 
     @GetMapping("/home")
     public String managerHome(HttpSession session, Model model) {
-        if (checkManagerAccess(session) == null) return "redirect:/login";
-
-        long totalServices = serviceDAO.countAllServices();
-        long totalGeneral  = serviceDAO.countGeneralServices();
-        long totalTest     = serviceDAO.countTestServices();
-
-        model.addAttribute("totalServices", totalServices);
-        model.addAttribute("totalGeneral", totalGeneral);
-        model.addAttribute("totalTest", totalTest);
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
+        }
+        model.addAttribute("totalServices", serviceDAO.countAllServices());
+        model.addAttribute("totalGeneral", serviceDAO.countGeneralServices());
+        model.addAttribute("totalTest", serviceDAO.countTestServices());
         model.addAttribute("loggedUser", session.getAttribute("loggedUser"));
         return "manager/home";
     }
-
-    // ======================== DANH SÁCH DỊCH VỤ ========================
 
     @GetMapping("/services")
     public String getAllServices(@RequestParam(required = false) String keyword,
@@ -64,11 +65,14 @@ public class ManagerController {
                                  @RequestParam(defaultValue = "0") int page,
                                  HttpSession session,
                                  Model model) {
-        if (checkManagerAccess(session) == null) return "redirect:/login";
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
+        }
 
         Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("id").ascending());
         boolean hasKeyword = keyword != null && !keyword.isBlank();
-        boolean hasType    = type != null && !type.isBlank();
+        boolean hasType = type != null && !type.isBlank();
 
         Page<Service> servicePage;
         if (hasKeyword && hasType) {
@@ -90,12 +94,12 @@ public class ManagerController {
         return "manager/services";
     }
 
-    // ======================== THÊM DỊCH VỤ ========================
-
     @GetMapping("/services/new")
     public String showAddForm(HttpSession session, Model model) {
-        if (checkManagerAccess(session) == null) return "redirect:/login";
-
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
+        }
         List<Clinic> clinics = clinicDAO.findAll();
         model.addAttribute("generalService", new GeneralService());
         model.addAttribute("testService", new TestService());
@@ -117,7 +121,10 @@ public class ManagerController {
                              @RequestParam(required = false) Integer clinicId,
                              HttpSession session,
                              RedirectAttributes redirectAttributes) {
-        if (checkManagerAccess(session) == null) return "redirect:/login";
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
+        }
 
         Clinic clinic = null;
         if (clinicId != null) {
@@ -149,12 +156,15 @@ public class ManagerController {
         return "redirect:/manager/services";
     }
 
-    // ======================== SỬA DỊCH VỤ ========================
-
     @GetMapping("/services/edit/{id}")
-    public String showEditForm(@PathVariable int id, HttpSession session, Model model,
+    public String showEditForm(@PathVariable int id,
+                               HttpSession session,
+                               Model model,
                                RedirectAttributes redirectAttributes) {
-        if (checkManagerAccess(session) == null) return "redirect:/login";
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
+        }
 
         Optional<Service> serviceOpt = serviceDAO.getById(id);
         if (serviceOpt.isEmpty()) {
@@ -195,7 +205,10 @@ public class ManagerController {
                                 @RequestParam(required = false) Integer clinicId,
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes) {
-        if (checkManagerAccess(session) == null) return "redirect:/login";
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
+        }
 
         Optional<Service> serviceOpt = serviceDAO.getById(id);
         if (serviceOpt.isEmpty()) {
@@ -228,14 +241,14 @@ public class ManagerController {
         return "redirect:/manager/services";
     }
 
-    // ======================== XÓA DỊCH VỤ ========================
-
     @PostMapping("/services/delete/{id}")
     public String deleteService(@PathVariable int id,
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes) {
-        if (checkManagerAccess(session) == null) return "redirect:/login";
-
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
+        }
         if (serviceDAO.existsById(id)) {
             serviceDAO.delete(id);
             redirectAttributes.addFlashAttribute("successMsg", "Xóa dịch vụ thành công!");

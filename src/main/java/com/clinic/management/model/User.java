@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+/** Người dùng đăng nhập hệ thống (quan lý hoặc bệnh nhân đăng ký). */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,5 +15,6 @@ public class User implements Serializable {
     private String username;
     private String password;
     private String fullName;
+    /** {@code MANAGER} | {@code PATIENT} */
     private String role;
 }

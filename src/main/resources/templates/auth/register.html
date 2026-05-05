@@ -21,22 +21,22 @@
 
                     <div th:if="${error}" class="alert alert-danger py-2 small" th:text="${error}"></div>
 
-                    <form th:action="@{/register}" method="post">
+                    <form th:action="@{/register}" th:object="${user}" method="post">
                         <div class="mb-3">
                             <label class="form-label">Họ và tên</label>
-                            <input type="text" name="fullName" class="form-control" required/>
+                            <input type="text" th:field="*{fullName}" class="form-control" required/>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Tên đăng nhập</label>
-                            <input type="text" name="username" class="form-control" required autocomplete="username"/>
+                            <input type="text" th:field="*{username}" class="form-control" required autocomplete="username"/>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Mật khẩu</label>
-                            <input type="password" name="password" class="form-control" required minlength="4" autocomplete="new-password"/>
+                            <input type="password" th:field="*{password}" class="form-control" required minlength="4" autocomplete="new-password"/>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Xác nhận mật khẩu</label>
-                            <input type="password" name="confirmPassword" class="form-control" required minlength="4" autocomplete="new-password"/>
+                            <input type="password" th:field="*{confirmPassword}" class="form-control" required minlength="4" autocomplete="new-password"/>
                         </div>
                         <button type="submit" class="btn btn-success w-100">Đăng ký</button>
                     </form>

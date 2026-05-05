@@ -10,7 +10,6 @@
 </head>
 <body class="bg-light">
 
-<!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" th:href="@{/manager/home}">
@@ -47,7 +46,6 @@
 
 <div class="container-fluid py-4 px-4">
 
-    <!-- Alerts -->
     <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show">
         <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -57,7 +55,6 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="mb-0 fw-bold text-primary">
@@ -70,7 +67,6 @@
         </a>
     </div>
 
-    <!-- Search/Filter Form -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <form th:action="@{/manager/services}" method="get" class="row g-3 align-items-end">
@@ -106,7 +102,6 @@
         </div>
     </div>
 
-    <!-- Services Table -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
             <span class="fw-semibold">
@@ -127,7 +122,7 @@
                         <th style="width:130px">Giá</th>
                         <th>Mô tả</th>
                         <th style="width:130px">Trạng thái</th>
-                        <th style="width:160px" class="text-center">Thao tác</th>
+                        <th style="width:200px" class="text-center">Thao tác</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -140,7 +135,10 @@
                     <tr th:each="svc : ${services}">
                         <td><span class="badge bg-secondary" th:text="${svc.id}"></span></td>
                         <td>
-                            <div class="fw-semibold" th:text="${svc.name}"></div>
+                            <a class="text-decoration-none text-dark"
+                               th:href="@{/manager/services/detail/{id}(id=${svc.id},keyword=${keyword},type=${type},page=${currentPage})}">
+                                <span class="fw-semibold" th:text="${svc.name}"></span>
+                            </a>
                             <small th:if="${svc.type == 'TEST'}"
                                    class="text-muted" th:text="${svc.method}"></small>
                         </td>
@@ -171,6 +169,11 @@
                                   class="badge bg-primary"><i class="bi bi-activity me-1"></i>Xét nghiệm</span>
                         </td>
                         <td class="text-center">
+                            <a class="btn btn-sm btn-outline-info me-1"
+                               th:title="'Xem chi tiết'"
+                               th:href="@{/manager/services/detail/{id}(id=${svc.id},keyword=${keyword},type=${type},page=${currentPage})}">
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
                             <a th:href="@{/manager/services/edit/{id}(id=${svc.id})}"
                                class="btn btn-sm btn-outline-primary me-1">
                                 <i class="bi bi-pencil-fill"></i>
@@ -181,7 +184,6 @@
                                 <i class="bi bi-trash-fill"></i>
                             </button>
 
-                            <!-- Delete Modal -->
                             <div class="modal fade" th:id="'deleteModal' + ${svc.id}" tabindex="-1">
                                 <div class="modal-dialog modal-sm">
                                     <div class="modal-content">
@@ -210,7 +212,6 @@
             </div>
         </div>
 
-        <!-- Pagination -->
         <div class="card-footer bg-white" th:if="${servicePage.totalPages > 1}">
             <nav>
                 <ul class="pagination justify-content-center mb-0">

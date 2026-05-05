@@ -21,9 +21,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Controller quản lý dịch vụ — chỉ vai trò {@code MANAGER} (sau đăng nhập).
- */
 @Controller
 @RequestMapping("/manager")
 @RequiredArgsConstructor
@@ -34,7 +31,6 @@ public class ManagerController {
     private final ServiceDAO serviceDAO;
     private final ClinicDAO clinicDAO;
 
-    /** @return {@code null} nếu OK; hoặc chuỗi redirect cho chặn MANAGER-only. */
     private String guardManager(HttpSession session) {
         User logged = (User) session.getAttribute("loggedUser");
         if (logged == null) {
@@ -44,6 +40,14 @@ public class ManagerController {
             return "redirect:/account";
         }
         return null;
+    }
+
+    private void attachClinic(Service svc, Integer clinicId) {
+        if (clinicId != null && clinicId > 0) {
+            svc.setClinic(clinicDAO.findById(clinicId).orElse(null));
+        } else {
+            svc.setClinic(null);
+        }
     }
 
     @GetMapping("/home")
@@ -94,6 +98,41 @@ public class ManagerController {
         return "manager/services";
     }
 
+    @GetMapping("/services/detail/{id}")
+    public String serviceDetail(@PathVariable int id,
+                                @RequestParam(required = false) String keyword,
+                                @RequestParam(required = false) String type,
+                                @RequestParam(required = false) Integer page,
+                                HttpSession session,
+                                Model model,
+                                RedirectAttributes redirectAttributes) {
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
+        }
+
+        Optional<Service> serviceOpt = serviceDAO.getById(id);
+        if (serviceOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy dịch vụ!");
+            return "redirect:/manager/services";
+        }
+
+        Service svc = serviceOpt.get();
+        model.addAttribute("service", svc);
+        if (svc instanceof GeneralService gs) {
+            model.addAttribute("generalService", gs);
+            model.addAttribute("serviceKind", "GENERAL");
+        } else if (svc instanceof TestService ts) {
+            model.addAttribute("testService", ts);
+            model.addAttribute("serviceKind", "TEST");
+        }
+        model.addAttribute("returnKeyword", keyword);
+        model.addAttribute("returnType", type);
+        model.addAttribute("returnPage", page != null ? page : 0);
+        model.addAttribute("loggedUser", session.getAttribute("loggedUser"));
+        return "manager/service-detail";
+    }
+
     @GetMapping("/services/new")
     public String showAddForm(HttpSession session, Model model) {
         String redir = guardManager(session);
@@ -101,23 +140,20 @@ public class ManagerController {
             return redir;
         }
         List<Clinic> clinics = clinicDAO.findAll();
-        model.addAttribute("generalService", new GeneralService());
-        model.addAttribute("testService", new TestService());
+        GeneralService gs = new GeneralService();
+        gs.setType("GENERAL");
+        TestService ts = new TestService();
+        ts.setType("TEST");
+        model.addAttribute("generalService", gs);
+        model.addAttribute("testService", ts);
         model.addAttribute("clinics", clinics);
         model.addAttribute("isEdit", false);
         model.addAttribute("loggedUser", session.getAttribute("loggedUser"));
         return "manager/service-form";
     }
 
-    @PostMapping("/services/add")
-    public String addService(@RequestParam String serviceKind,
-                             @RequestParam String name,
-                             @RequestParam String type,
-                             @RequestParam(required = false) String des,
-                             @RequestParam double price,
-                             @RequestParam(required = false, defaultValue = "true") boolean isActive,
-                             @RequestParam(required = false) String preparationInstructions,
-                             @RequestParam(required = false) String method,
+    @PostMapping("/services/general/add")
+    public String addGeneral(@ModelAttribute("generalService") GeneralService generalService,
                              @RequestParam(required = false) Integer clinicId,
                              HttpSession session,
                              RedirectAttributes redirectAttributes) {
@@ -125,33 +161,23 @@ public class ManagerController {
         if (redir != null) {
             return redir;
         }
+        attachClinic(generalService, clinicId);
+        serviceDAO.add(generalService);
+        redirectAttributes.addFlashAttribute("successMsg", "Thêm dịch vụ thành công!");
+        return "redirect:/manager/services";
+    }
 
-        Clinic clinic = null;
-        if (clinicId != null) {
-            clinic = clinicDAO.findById(clinicId).orElse(null);
+    @PostMapping("/services/test/add")
+    public String addTest(@ModelAttribute("testService") TestService testService,
+                          @RequestParam(required = false) Integer clinicId,
+                          HttpSession session,
+                          RedirectAttributes redirectAttributes) {
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
         }
-
-        if ("GENERAL".equals(serviceKind)) {
-            GeneralService gs = new GeneralService();
-            gs.setName(name);
-            gs.setType(type);
-            gs.setDes(des);
-            gs.setPrice(price);
-            gs.setActive(isActive);
-            gs.setClinic(clinic);
-            serviceDAO.add(gs);
-        } else {
-            TestService ts = new TestService();
-            ts.setName(name);
-            ts.setType(type);
-            ts.setDes(des);
-            ts.setPrice(price);
-            ts.setPreparationInstructions(preparationInstructions);
-            ts.setMethod(method);
-            ts.setClinic(clinic);
-            serviceDAO.add(ts);
-        }
-
+        attachClinic(testService, clinicId);
+        serviceDAO.add(testService);
         redirectAttributes.addFlashAttribute("successMsg", "Thêm dịch vụ thành công!");
         return "redirect:/manager/services";
     }
@@ -183,6 +209,9 @@ public class ManagerController {
             model.addAttribute("generalService", new GeneralService());
             model.addAttribute("testService", ts);
             model.addAttribute("serviceKind", "TEST");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMsg", "Loại dịch vụ không hợp lệ (không phải khám hoặc xét nghiệm).");
+            return "redirect:/manager/services";
         }
 
         model.addAttribute("clinics", clinics);
@@ -192,16 +221,9 @@ public class ManagerController {
         return "manager/service-form";
     }
 
-    @PostMapping("/services/update/{id}")
-    public String updateService(@PathVariable int id,
-                                @RequestParam String serviceKind,
-                                @RequestParam String name,
-                                @RequestParam String type,
-                                @RequestParam(required = false) String des,
-                                @RequestParam double price,
-                                @RequestParam(required = false, defaultValue = "false") boolean isActive,
-                                @RequestParam(required = false) String preparationInstructions,
-                                @RequestParam(required = false) String method,
+    @PostMapping("/services/general/update/{id}")
+    public String updateGeneral(@PathVariable int id,
+                                @ModelAttribute("generalService") GeneralService incoming,
                                 @RequestParam(required = false) Integer clinicId,
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes) {
@@ -210,33 +232,39 @@ public class ManagerController {
             return redir;
         }
 
-        Optional<Service> serviceOpt = serviceDAO.getById(id);
-        if (serviceOpt.isEmpty()) {
-            redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy dịch vụ!");
+        Optional<Service> existing = serviceDAO.getById(id);
+        if (existing.isEmpty() || !(existing.get() instanceof GeneralService)) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy hoặc loại dịch vụ không khớp!");
             return "redirect:/manager/services";
         }
 
-        Clinic clinic = null;
-        if (clinicId != null) {
-            clinic = clinicDAO.findById(clinicId).orElse(null);
+        incoming.setId(id);
+        attachClinic(incoming, clinicId);
+        serviceDAO.update(incoming);
+        redirectAttributes.addFlashAttribute("successMsg", "Cập nhật dịch vụ thành công!");
+        return "redirect:/manager/services";
+    }
+
+    @PostMapping("/services/test/update/{id}")
+    public String updateTest(@PathVariable int id,
+                             @ModelAttribute("testService") TestService incoming,
+                             @RequestParam(required = false) Integer clinicId,
+                             HttpSession session,
+                             RedirectAttributes redirectAttributes) {
+        String redir = guardManager(session);
+        if (redir != null) {
+            return redir;
         }
 
-        Service service = serviceOpt.get();
-        service.setName(name);
-        service.setType(type);
-        service.setDes(des);
-        service.setPrice(price);
-        service.setClinic(clinic);
-
-        if (service instanceof GeneralService gs) {
-            gs.setActive(isActive);
-            serviceDAO.update(gs);
-        } else if (service instanceof TestService ts) {
-            ts.setPreparationInstructions(preparationInstructions);
-            ts.setMethod(method);
-            serviceDAO.update(ts);
+        Optional<Service> existing = serviceDAO.getById(id);
+        if (existing.isEmpty() || !(existing.get() instanceof TestService)) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy hoặc loại dịch vụ không khớp!");
+            return "redirect:/manager/services";
         }
 
+        incoming.setId(id);
+        attachClinic(incoming, clinicId);
+        serviceDAO.update(incoming);
         redirectAttributes.addFlashAttribute("successMsg", "Cập nhật dịch vụ thành công!");
         return "redirect:/manager/services";
     }

@@ -39,11 +39,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String processLogin(@RequestParam String username,
-                               @RequestParam String password,
+    public String processLogin(@ModelAttribute("user") User form,
                                HttpSession session,
                                RedirectAttributes redirectAttributes) {
-        Optional<User> found = userDAO.findByUsernameAndPassword(username, password);
+        Optional<User> found = userDAO.findByUsernameAndPassword(
+                form.getUsername() != null ? form.getUsername().trim() : "",
+                form.getPassword() != null ? form.getPassword() : "");
         if (found.isPresent()) {
             session.setAttribute("loggedUser", found.get());
             return "redirect:/";
@@ -62,17 +63,16 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String processRegister(@RequestParam String username,
-                                  @RequestParam String password,
-                                  @RequestParam String confirmPassword,
-                                  @RequestParam String fullName,
+    public String processRegister(@ModelAttribute("user") User form,
                                   RedirectAttributes redirectAttributes) {
-        String u = username != null ? username.trim() : "";
-        if (u.isBlank() || password == null || password.isBlank()) {
+        String u = form.getUsername() != null ? form.getUsername().trim() : "";
+        String pw = form.getPassword() != null ? form.getPassword() : "";
+
+        if (u.isBlank() || pw.isBlank()) {
             redirectAttributes.addFlashAttribute("error", "Vui lòng nhập đủ tên đăng nhập và mật khẩu.");
             return "redirect:/register";
         }
-        if (!password.equals(confirmPassword)) {
+        if (!pw.equals(form.getConfirmPassword())) {
             redirectAttributes.addFlashAttribute("error", "Mật khẩu xác nhận không khớp.");
             return "redirect:/register";
         }
@@ -83,8 +83,8 @@ public class AuthController {
 
         User nu = new User();
         nu.setUsername(u);
-        nu.setPassword(password);
-        nu.setFullName(fullName != null ? fullName.trim() : "");
+        nu.setPassword(pw);
+        nu.setFullName(form.getFullName() != null ? form.getFullName().trim() : "");
         nu.setRole("PATIENT");
         userDAO.insert(nu);
 
@@ -98,7 +98,6 @@ public class AuthController {
         return "redirect:/login";
     }
 
-    /** Trang tối giản sau khi bệnh nhân đăng nhập (module đặt lịch có thể bổ sung sau). */
     @GetMapping("/account")
     public String account(HttpSession session, Model model) {
         User u = (User) session.getAttribute("loggedUser");

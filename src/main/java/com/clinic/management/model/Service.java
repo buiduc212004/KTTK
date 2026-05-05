@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
-/** Model domain: dịch vụ cha (JOINED subclass general / test). */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

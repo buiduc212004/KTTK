@@ -21,10 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * DAO truy cập dữ liệu dịch vụ (JOINED inheritance) bằng JDBC — vai trò tương đương {@code ServiceDAO} trong thiết kế.
- * Đặt tên bảng/cột khớp Spring Boot Hibernate (physical naming camel_case → snake_case).
- */
 @Repository
 public class ServiceDAO extends DAO {
 
@@ -39,7 +35,6 @@ public class ServiceDAO extends DAO {
         this.clinicDAO = clinicDAO;
     }
 
-    /** Theo UML: lấy tất cả (không phân trang). */
     public List<Service> getAll() throws DataAccessException {
         String sql = selectBaseProjection() + " ORDER BY sid ASC ";
         try (Connection c = getConnection();
@@ -56,12 +51,10 @@ public class ServiceDAO extends DAO {
         }
     }
 
-    /** Theo UML: tìm theo tên. */
     public List<Service> searchByName(String name) throws DataAccessException {
         return findPaged(name, "", Pageable.unpaged()).getContent();
     }
 
-    /** Theo UML: lấy theo khóa. */
     public Optional<Service> getById(int id) throws DataAccessException {
         String sql = selectBaseProjection(" WHERE 1=1 AND s.id = ? ");
         try (Connection c = getConnection();
@@ -75,7 +68,6 @@ public class ServiceDAO extends DAO {
         }
     }
 
-    /** Theo UML: thêm; chấp nhận {@link GeneralService} hoặc {@link TestService}. */
     public void add(Service s) throws DataAccessException {
         if (s instanceof GeneralService gs) {
             insertGeneral(gs);
@@ -88,7 +80,6 @@ public class ServiceDAO extends DAO {
         throw new IllegalArgumentException("Kiểu dịch vụ không được hỗ trợ cho add(): " + s.getClass());
     }
 
-    /** Theo UML: cập nhật. */
     public void update(Service s) throws DataAccessException {
         if (s instanceof GeneralService gs) {
             updateGeneral(gs);
@@ -101,7 +92,6 @@ public class ServiceDAO extends DAO {
         throw new IllegalArgumentException("Kiểu dịch vụ không được hỗ trợ cho update(): " + s.getClass());
     }
 
-    /** Theo UML: xóa theo id. */
     public boolean delete(int id) throws DataAccessException {
         try (Connection c = getConnection()) {
             c.setAutoCommit(false);
@@ -196,12 +186,6 @@ public class ServiceDAO extends DAO {
         }
     }
 
-    /* ======================== Private helpers ======================== */
-
-    /**
-     * Bản ghi cũ (Hibernate): {@code service_type} có thể NULL nhưng {@code dtype} vẫn là GENERAL/TEST.
-     * Dùng chung cho SELECT (alias {@code stype}) và điều kiện WHERE lọc loại.
-     */
     private static final String SERVICE_KIND_SQL =
             "COALESCE(NULLIF(TRIM(s.service_type), ''), NULLIF(TRIM(CAST(s.dtype AS TEXT)), ''))";
 
@@ -239,10 +223,6 @@ public class ServiceDAO extends DAO {
         return selectBaseProjection(" WHERE 1=1 ");
     }
 
-    /**
-     * @param trailingWhereFromOne ví dụ: {@code " WHERE 1=1 "} hoặc {@code " WHERE 1=1 AND s.id = ? "}
-     *        đã chứa từ khóa {@code WHERE}.
-     */
     private String selectBaseProjection(String trailingWhereFromOne) {
         return "SELECT "
                 + " s.id AS sid, s.dtype AS sdtype, s.name AS sname, "
@@ -296,7 +276,6 @@ public class ServiceDAO extends DAO {
             ts.setMethod(rs.getString("tmethod"));
             return ts;
         }
-        /* Fallback dữ liệu lạ */
         boolean general = isGeneral(rs) || rs.getObject("gactive") != null;
         if (general) {
             GeneralService gs = new GeneralService();
@@ -323,7 +302,6 @@ public class ServiceDAO extends DAO {
         attachClinic(s, rs);
     }
 
-    /** Chuẩn hóa GENERAL/TEST cho Thymeleaf ({@code svc.type == 'GENERAL'}). */
     private static String normalizeUiServiceKind(ResultSet rs) throws SQLException {
         String raw = rs.getString("stype");
         if (raw != null) {
@@ -390,7 +368,6 @@ public class ServiceDAO extends DAO {
     }
 
     private void insertGeneral(GeneralService gs) throws DataAccessException {
-        // PostgreSQL: không dùng getGeneratedKeys() với JOINED discriminator — cột dtype (varchar) có thể là cột đầu, gây getInt("1") → "GENERAL".
         final String sqlRoot = "INSERT INTO " + TBL_SERVICE
                 + " (name, service_type, des, price, dtype, clinic_id) VALUES (?,?,?,?,?,?) RETURNING id";
         try (Connection c = getConnection()) {

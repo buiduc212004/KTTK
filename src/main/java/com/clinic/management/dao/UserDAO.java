@@ -11,9 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
-/**
- * Bảng {@code tbl_user} (snake_case cột: username, password, full_name, role) — khớp schema Hibernate cũ.
- */
 @Repository
 public class UserDAO extends DAO {
 
@@ -82,11 +79,12 @@ public class UserDAO extends DAO {
     }
 
     private static User map(ResultSet rs) throws SQLException {
-        return new User(
-                rs.getInt("id"),
-                rs.getString("username"),
-                rs.getString("password"),
-                rs.getString("full_name"),
-                rs.getString("role"));
+        User u = new User();
+        u.setId(rs.getInt("id"));
+        u.setUsername(rs.getString("username"));
+        u.setPassword(rs.getString("password"));
+        u.setFullName(rs.getString("full_name"));
+        u.setRole(rs.getString("role"));
+        return u;
     }
 }

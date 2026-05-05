@@ -34,13 +34,13 @@
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
 
-        <!-- Spring JDBC (không dùng JPA / Repository — DAO + model như demo thầy) -->
+        <!-- Spring JDBC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
 
-        <!-- Pageable/PageImpl (chỉ dùng cho phân trang Service; không dùng JPA Repository) -->
+        <!-- Pageable/PageImpl -->
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-commons</artifactId>

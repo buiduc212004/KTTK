@@ -11,9 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-/**
- * Seed: tài khoản quản lý mẫu (khi DB chưa có user); phòng khám + dịch vụ khi chưa có dịch vụ.
- */
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {

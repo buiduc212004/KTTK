@@ -49,7 +49,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a th:href="@{/manager/home}">Trang chủ</a></li>
             <li class="breadcrumb-item">
-                <a th:href="@{/manager/services(keyword=${returnKeyword},type=${returnType},page=${returnPage})}">Quản lý dịch vụ</a>
+                <a th:href="@{/manager/services(name=${returnService.name},type=${returnService.type},page=${returnPage})}">Quản lý dịch vụ</a>
             </li>
             <li class="breadcrumb-item active">Chi tiết</li>
         </ol>
@@ -61,7 +61,7 @@
         </h4>
         <div class="d-flex gap-2">
             <a class="btn btn-outline-secondary btn-sm"
-               th:href="@{/manager/services(keyword=${returnKeyword},type=${returnType},page=${returnPage})}">
+               th:href="@{/manager/services(name=${returnService.name},type=${returnService.type},page=${returnPage})}">
                 <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
             </a>
             <a class="btn btn-primary btn-sm" th:href="@{/manager/services/edit/{id}(id=${service.id})}">

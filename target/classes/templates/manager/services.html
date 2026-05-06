@@ -69,23 +69,24 @@
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
-            <form th:action="@{/manager/services}" method="get" class="row g-3 align-items-end">
+            <form th:action="@{/manager/services}" method="get" class="row g-3 align-items-end"
+                  th:object="${service}">
                 <div class="col-md-5">
                     <label class="form-label fw-semibold">
                         <i class="bi bi-search me-1"></i>Tìm kiếm theo tên
                     </label>
-                    <input type="text" name="keyword" class="form-control"
+                    <input type="text" class="form-control"
                            placeholder="Nhập tên dịch vụ..."
-                           th:value="${keyword}"/>
+                           th:field="*{name}"/>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-semibold">
                         <i class="bi bi-funnel me-1"></i>Loại dịch vụ
                     </label>
-                    <select name="type" class="form-select">
+                    <select class="form-select" th:field="*{type}">
                         <option value="">-- Tất cả --</option>
-                        <option value="GENERAL" th:selected="${type == 'GENERAL'}">Khám thông thường</option>
-                        <option value="TEST" th:selected="${type == 'TEST'}">Xét nghiệm</option>
+                        <option value="GENERAL">Khám thông thường</option>
+                        <option value="TEST">Xét nghiệm</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -136,7 +137,7 @@
                         <td><span class="badge bg-secondary" th:text="${svc.id}"></span></td>
                         <td>
                             <a class="text-decoration-none text-dark"
-                               th:href="@{/manager/services/detail/{id}(id=${svc.id},keyword=${keyword},type=${type},page=${currentPage})}">
+                               th:href="@{/manager/services/detail/{id}(id=${svc.id},name=${service.name},type=${service.type},page=${currentPage})}">
                                 <span class="fw-semibold" th:text="${svc.name}"></span>
                             </a>
                             <small th:if="${svc.type == 'TEST'}"
@@ -171,7 +172,7 @@
                         <td class="text-center">
                             <a class="btn btn-sm btn-outline-info me-1"
                                th:title="'Xem chi tiết'"
-                               th:href="@{/manager/services/detail/{id}(id=${svc.id},keyword=${keyword},type=${type},page=${currentPage})}">
+                               th:href="@{/manager/services/detail/{id}(id=${svc.id},name=${service.name},type=${service.type},page=${currentPage})}">
                                 <i class="bi bi-eye-fill"></i>
                             </a>
                             <a th:href="@{/manager/services/edit/{id}(id=${svc.id})}"
@@ -217,19 +218,19 @@
                 <ul class="pagination justify-content-center mb-0">
                     <li class="page-item" th:classappend="${servicePage.first} ? 'disabled'">
                         <a class="page-link"
-                           th:href="@{/manager/services(keyword=${keyword},type=${type},page=${currentPage - 1})}">
+                           th:href="@{/manager/services(name=${service.name},type=${service.type},page=${currentPage - 1})}">
                             <i class="bi bi-chevron-left"></i>
                         </a>
                     </li>
                     <li th:each="i : ${#numbers.sequence(0, servicePage.totalPages - 1)}"
                         class="page-item" th:classappend="${i == currentPage} ? 'active'">
                         <a class="page-link"
-                           th:href="@{/manager/services(keyword=${keyword},type=${type},page=${i})}"
+                           th:href="@{/manager/services(name=${service.name},type=${service.type},page=${i})}"
                            th:text="${i + 1}"></a>
                     </li>
                     <li class="page-item" th:classappend="${servicePage.last} ? 'disabled'">
                         <a class="page-link"
-                           th:href="@{/manager/services(keyword=${keyword},type=${type},page=${currentPage + 1})}">
+                           th:href="@{/manager/services(name=${service.name},type=${service.type},page=${currentPage + 1})}">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>

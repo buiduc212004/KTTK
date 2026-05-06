@@ -64,8 +64,7 @@ public class ManagerController {
     }
 
     @GetMapping("/services")
-    public String getAllServices(@RequestParam(required = false) String keyword,
-                                 @RequestParam(required = false) String type,
+    public String getAllServices(@ModelAttribute("service") Service serviceCriteria,
                                  @RequestParam(defaultValue = "0") int page,
                                  HttpSession session,
                                  Model model) {
@@ -74,25 +73,29 @@ public class ManagerController {
             return redir;
         }
 
+        String nameFilter =
+                serviceCriteria.getName() != null ? serviceCriteria.getName().trim() : "";
+
         Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("id").ascending());
-        boolean hasKeyword = keyword != null && !keyword.isBlank();
-        boolean hasType = type != null && !type.isBlank();
+        boolean hasKeyword = !nameFilter.isBlank();
+        String typeFilter = serviceCriteria.getType();
+        boolean hasType = typeFilter != null && !typeFilter.isBlank();
 
         Page<Service> servicePage;
         if (hasKeyword && hasType) {
-            servicePage = serviceDAO.findPaged(keyword, type, pageable);
+            servicePage = serviceDAO.findPaged(nameFilter, typeFilter, pageable);
         } else if (hasKeyword) {
-            servicePage = serviceDAO.findPaged(keyword, null, pageable);
+            servicePage = serviceDAO.findPaged(nameFilter, null, pageable);
         } else if (hasType) {
-            servicePage = serviceDAO.findPaged(null, type, pageable);
+            servicePage = serviceDAO.findPaged(null, typeFilter, pageable);
         } else {
             servicePage = serviceDAO.findPaged(null, null, pageable);
         }
 
+        serviceCriteria.setName(nameFilter);
+
         model.addAttribute("servicePage", servicePage);
         model.addAttribute("services", servicePage.getContent());
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("type", type);
         model.addAttribute("currentPage", page);
         model.addAttribute("loggedUser", session.getAttribute("loggedUser"));
         return "manager/services";
@@ -100,7 +103,7 @@ public class ManagerController {
 
     @GetMapping("/services/detail/{id}")
     public String serviceDetail(@PathVariable int id,
-                                @RequestParam(required = false) String keyword,
+                                @RequestParam(required = false) String name,
                                 @RequestParam(required = false) String type,
                                 @RequestParam(required = false) Integer page,
                                 HttpSession session,
@@ -126,8 +129,10 @@ public class ManagerController {
             model.addAttribute("testService", ts);
             model.addAttribute("serviceKind", "TEST");
         }
-        model.addAttribute("returnKeyword", keyword);
-        model.addAttribute("returnType", type);
+        Service returnCriteria = new Service();
+        returnCriteria.setName(name != null ? name : "");
+        returnCriteria.setType(type);
+        model.addAttribute("returnService", returnCriteria);
         model.addAttribute("returnPage", page != null ? page : 0);
         model.addAttribute("loggedUser", session.getAttribute("loggedUser"));
         return "manager/service-detail";

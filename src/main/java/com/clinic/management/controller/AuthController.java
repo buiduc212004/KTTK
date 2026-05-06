@@ -1,7 +1,7 @@
 package com.clinic.management.controller;
 
-import com.clinic.management.dao.UserDAO;
 import com.clinic.management.model.User;
+import com.clinic.management.service.UserAuthService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -15,7 +15,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserDAO userDAO;
+    private final UserAuthService userAuthService;
 
     @GetMapping("/")
     public String index(HttpSession session) {
@@ -42,9 +42,7 @@ public class AuthController {
     public String processLogin(@ModelAttribute("user") User form,
                                HttpSession session,
                                RedirectAttributes redirectAttributes) {
-        Optional<User> found = userDAO.findByUsernameAndPassword(
-                form.getUsername() != null ? form.getUsername().trim() : "",
-                form.getPassword() != null ? form.getPassword() : "");
+        Optional<User> found = userAuthService.authenticate(form);
         if (found.isPresent()) {
             session.setAttribute("loggedUser", found.get());
             return "redirect:/";
@@ -65,29 +63,11 @@ public class AuthController {
     @PostMapping("/register")
     public String processRegister(@ModelAttribute("user") User form,
                                   RedirectAttributes redirectAttributes) {
-        String u = form.getUsername() != null ? form.getUsername().trim() : "";
-        String pw = form.getPassword() != null ? form.getPassword() : "";
-
-        if (u.isBlank() || pw.isBlank()) {
-            redirectAttributes.addFlashAttribute("error", "Vui lòng nhập đủ tên đăng nhập và mật khẩu.");
+        Optional<String> error = userAuthService.registerPatient(form);
+        if (error.isPresent()) {
+            redirectAttributes.addFlashAttribute("error", error.get());
             return "redirect:/register";
         }
-        if (!pw.equals(form.getConfirmPassword())) {
-            redirectAttributes.addFlashAttribute("error", "Mật khẩu xác nhận không khớp.");
-            return "redirect:/register";
-        }
-        if (userDAO.existsByUsername(u)) {
-            redirectAttributes.addFlashAttribute("error", "Tên đăng nhập đã được sử dụng.");
-            return "redirect:/register";
-        }
-
-        User nu = new User();
-        nu.setUsername(u);
-        nu.setPassword(pw);
-        nu.setFullName(form.getFullName() != null ? form.getFullName().trim() : "");
-        nu.setRole("PATIENT");
-        userDAO.insert(nu);
-
         redirectAttributes.addFlashAttribute("success", "Đăng ký thành công. Vui lòng đăng nhập.");
         return "redirect:/login";
     }

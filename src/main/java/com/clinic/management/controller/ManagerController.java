@@ -1,18 +1,14 @@
 package com.clinic.management.controller;
 
-import com.clinic.management.dao.ClinicDAO;
-import com.clinic.management.dao.ServiceDAO;
 import com.clinic.management.model.Clinic;
 import com.clinic.management.model.GeneralService;
 import com.clinic.management.model.Service;
 import com.clinic.management.model.TestService;
 import com.clinic.management.model.User;
+import com.clinic.management.service.ServiceCatalogService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +22,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ManagerController {
 
-    private static final int PAGE_SIZE = 4;
-
-    private final ServiceDAO serviceDAO;
-    private final ClinicDAO clinicDAO;
+    private final ServiceCatalogService serviceCatalog;
 
     private String guardManager(HttpSession session) {
         User logged = (User) session.getAttribute("loggedUser");
@@ -42,23 +35,15 @@ public class ManagerController {
         return null;
     }
 
-    private void attachClinic(Service svc, Integer clinicId) {
-        if (clinicId != null && clinicId > 0) {
-            svc.setClinic(clinicDAO.findById(clinicId).orElse(null));
-        } else {
-            svc.setClinic(null);
-        }
-    }
-
     @GetMapping("/home")
     public String managerHome(HttpSession session, Model model) {
         String redir = guardManager(session);
         if (redir != null) {
             return redir;
         }
-        model.addAttribute("totalServices", serviceDAO.countAllServices());
-        model.addAttribute("totalGeneral", serviceDAO.countGeneralServices());
-        model.addAttribute("totalTest", serviceDAO.countTestServices());
+        model.addAttribute("totalServices", serviceCatalog.countAllServices());
+        model.addAttribute("totalGeneral", serviceCatalog.countGeneralServices());
+        model.addAttribute("totalTest", serviceCatalog.countTestServices());
         model.addAttribute("loggedUser", session.getAttribute("loggedUser"));
         return "manager/home";
     }
@@ -73,26 +58,7 @@ public class ManagerController {
             return redir;
         }
 
-        String nameFilter =
-                serviceCriteria.getName() != null ? serviceCriteria.getName().trim() : "";
-
-        Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("id").ascending());
-        boolean hasKeyword = !nameFilter.isBlank();
-        String typeFilter = serviceCriteria.getType();
-        boolean hasType = typeFilter != null && !typeFilter.isBlank();
-
-        Page<Service> servicePage;
-        if (hasKeyword && hasType) {
-            servicePage = serviceDAO.findPaged(nameFilter, typeFilter, pageable);
-        } else if (hasKeyword) {
-            servicePage = serviceDAO.findPaged(nameFilter, null, pageable);
-        } else if (hasType) {
-            servicePage = serviceDAO.findPaged(null, typeFilter, pageable);
-        } else {
-            servicePage = serviceDAO.findPaged(null, null, pageable);
-        }
-
-        serviceCriteria.setName(nameFilter);
+        Page<Service> servicePage = serviceCatalog.findServicesForList(serviceCriteria, page);
 
         model.addAttribute("servicePage", servicePage);
         model.addAttribute("services", servicePage.getContent());
@@ -114,7 +80,7 @@ public class ManagerController {
             return redir;
         }
 
-        Optional<Service> serviceOpt = serviceDAO.getById(id);
+        Optional<Service> serviceOpt = serviceCatalog.getById(id);
         if (serviceOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy dịch vụ!");
             return "redirect:/manager/services";
@@ -144,7 +110,7 @@ public class ManagerController {
         if (redir != null) {
             return redir;
         }
-        List<Clinic> clinics = clinicDAO.findAll();
+        List<Clinic> clinics = serviceCatalog.findAllClinics();
         GeneralService gs = new GeneralService();
         gs.setType("GENERAL");
         TestService ts = new TestService();
@@ -166,8 +132,7 @@ public class ManagerController {
         if (redir != null) {
             return redir;
         }
-        attachClinic(generalService, clinicId);
-        serviceDAO.add(generalService);
+        serviceCatalog.addGeneral(generalService, clinicId);
         redirectAttributes.addFlashAttribute("successMsg", "Thêm dịch vụ thành công!");
         return "redirect:/manager/services";
     }
@@ -181,8 +146,7 @@ public class ManagerController {
         if (redir != null) {
             return redir;
         }
-        attachClinic(testService, clinicId);
-        serviceDAO.add(testService);
+        serviceCatalog.addTest(testService, clinicId);
         redirectAttributes.addFlashAttribute("successMsg", "Thêm dịch vụ thành công!");
         return "redirect:/manager/services";
     }
@@ -197,14 +161,14 @@ public class ManagerController {
             return redir;
         }
 
-        Optional<Service> serviceOpt = serviceDAO.getById(id);
+        Optional<Service> serviceOpt = serviceCatalog.getById(id);
         if (serviceOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy dịch vụ!");
             return "redirect:/manager/services";
         }
 
         Service service = serviceOpt.get();
-        List<Clinic> clinics = clinicDAO.findAll();
+        List<Clinic> clinics = serviceCatalog.findAllClinics();
 
         if (service instanceof GeneralService gs) {
             model.addAttribute("generalService", gs);
@@ -237,15 +201,10 @@ public class ManagerController {
             return redir;
         }
 
-        Optional<Service> existing = serviceDAO.getById(id);
-        if (existing.isEmpty() || !(existing.get() instanceof GeneralService)) {
+        if (!serviceCatalog.updateGeneral(id, incoming, clinicId)) {
             redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy hoặc loại dịch vụ không khớp!");
             return "redirect:/manager/services";
         }
-
-        incoming.setId(id);
-        attachClinic(incoming, clinicId);
-        serviceDAO.update(incoming);
         redirectAttributes.addFlashAttribute("successMsg", "Cập nhật dịch vụ thành công!");
         return "redirect:/manager/services";
     }
@@ -261,15 +220,10 @@ public class ManagerController {
             return redir;
         }
 
-        Optional<Service> existing = serviceDAO.getById(id);
-        if (existing.isEmpty() || !(existing.get() instanceof TestService)) {
+        if (!serviceCatalog.updateTest(id, incoming, clinicId)) {
             redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy hoặc loại dịch vụ không khớp!");
             return "redirect:/manager/services";
         }
-
-        incoming.setId(id);
-        attachClinic(incoming, clinicId);
-        serviceDAO.update(incoming);
         redirectAttributes.addFlashAttribute("successMsg", "Cập nhật dịch vụ thành công!");
         return "redirect:/manager/services";
     }
@@ -282,8 +236,7 @@ public class ManagerController {
         if (redir != null) {
             return redir;
         }
-        if (serviceDAO.existsById(id)) {
-            serviceDAO.delete(id);
+        if (serviceCatalog.deleteById(id)) {
             redirectAttributes.addFlashAttribute("successMsg", "Xóa dịch vụ thành công!");
         } else {
             redirectAttributes.addFlashAttribute("errorMsg", "Không tìm thấy dịch vụ để xóa!");

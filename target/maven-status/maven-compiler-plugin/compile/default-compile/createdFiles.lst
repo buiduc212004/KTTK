@@ -9,7 +9,6 @@ com\clinic\management\dao\ClinicDAO.class
 com\clinic\management\dao\ClinicDAO$3.class
 com\clinic\management\dao\DAO.class
 com\clinic\management\dao\ServiceDAO$6.class
-com\clinic\management\controller\ManagerController.class
 com\clinic\management\model\User.class
 com\clinic\management\controller\AuthController.class
 com\clinic\management\dao\ClinicDAO$1.class

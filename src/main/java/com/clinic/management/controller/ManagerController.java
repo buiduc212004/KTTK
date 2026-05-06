@@ -26,7 +26,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ManagerController {
 
-    private static final int PAGE_SIZE = 10;
+    private static final int PAGE_SIZE = 4;
 
     private final ServiceDAO serviceDAO;
     private final ClinicDAO clinicDAO;
